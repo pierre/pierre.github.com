@@ -5,3 +5,4 @@ title: Pierre's pages
 h1. Projects
 
 * The "Dwarf":http://pierre.github.com/dwarf framework
+* "Slides":http://pierre.github.com/meteo from the "Ning Tech-Talk":http://www.meetup.com/Ning-Tech-Talks/events/17221783/
