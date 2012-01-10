@@ -24,9 +24,10 @@
             <ul>
                 <li><a href="#overview">Overview</a></li>
                 <li><a href="#getting-started">Getting started</a></li>
-                <li><a href="#client-side">Client side events logging (e.g. from Javascript)</a></li>
-                <li><a href="#server-side">Server side events logging (e.g. from Java, php)</a></li>
+                <li><a href="#client-side">Client side events logging</a></li>
+                <li><a href="#server-side">Server side events logging</a></li>
                 <li><a href="#eventtracker">Eventtracker: Java library</a></li>
+                <li><a href="#monitoring">Monitoring</a></li>
             </ul>
         </div>
     </div>
@@ -257,5 +258,136 @@ collector.offerEvent(SmileEnvelopeEvent.fromPOJO("Hello", Granularity.HOURLY, ev
                 <li>collector is an instance of com.ning.metrics.eventtracker.CollectorController (from Guice)</li>
             </ul>
         </p>
+
+        <hr>
+
+        <h2 id="monitoring">Monitoring</h2>
+
+        <p>This section describes how to get stats out of a running Collector.</p>
+
+        <h3>Via HTTP</h3>
+
+        <p>Http is probably the easiest way to get simple stats out of a running collector:</p>
+
+        <pre class="prettyprint lang-js">~ &gt; curl http://127.0.0.1:8080/1.0/healthcheck?pretty=true
+    {
+        "location" : "http://&lt;collector&gt;:8080/1.0/healthcheck",
+        "size" : 3,
+        "formatVersion" : "1",
+        "generated" : "2011-07-26T04:05:21.440Z",
+        "items" : [ {
+            "type" : "WriterHealthCheck",
+            "code" : "OK",
+            "message" : "running: true, local files: {/events/MyAwesomeEvent/2011/07/26/04|thrift: 0}, enqueued: 928839, written: 928839, dropped: 0, errored: 0, ignored: 0, flushes: 50212"
+    }, {
+        "type" : "RealtimeHealthCheck",
+        "code" : "OK",
+        "message" : "enabled: true, running: true, types: [MyAwesomeEvent, MyAwesomeEvent2], queue sizes: {MyAwesomeEvent: 0, MyAwesomeEvent2: 0}, enqueued: 76257, sent: 76257, dropped: 0, errored: 0, ignored: 852582"
+    }, {
+        "type" : "HadoopHealthCheck",
+        "code" : "OK",
+        "message" : "&lt;your hadoop conf&gt;"
+    } ]
+}</pre>
+
+        <p>
+            <ul>
+                <li><strong>WriterHealthCheck</strong> takes care of writing events to HDFS:
+                    <ul>
+                        <li><strong>running</strong>: whether the subsystem accepts events</li>
+                        <li><strong>local files</strong>: spool queues currently active with the associated serialization format and number of events waiting to be written to disk</li>
+                        <li><strong>enqueued</strong>: total number of events received by the subsystem</li>
+                        <li><strong>written</strong>: total number of events spooled to disk</li>
+                        <li><strong>dropped</strong>: total number of events dropped due to full queue</li>
+                        <li><strong>errored</strong>: total number of events dropped due to I/O Error</li>
+                        <li><strong>ignored</strong>: total number of events dropped when subsystem was disabled</li>
+                        <li><strong>pendingFiles</strong>: total number of files waiting to be flushed to HDFS</li>
+                        <li><strong>flushes</strong>: total number of files written to HDFS</li>
+                    </ul>
+                </li>
+                <li><strong>RealtimeHealthCheck</strong> takes care of sending events to ActiveMQ:
+                    <ul>
+                        <li><strong>enabled</strong>: whether ActiveMQ has been configured</li>
+                        <li><strong>running</strong>: whether the subsystem accepts events</li>
+                        <li><strong>types</strong>: types of events to forward</li>
+                        <li><strong>queue sizes</strong>: total number of events waiting to be sent</li>
+                        <li><strong>enqueued</strong>: total number of events received by the subsystem</li>
+                        <li><strong>sent</strong>: total number of events sent to ActiveMQ</li>
+                        <li><strong>dropped</strong>: total number of events dropped due to full queue</li>
+                        <li><strong>errored</strong>: total number of events dropped due to ActiveMQ Error</li>
+                        <li><strong>ignored</strong>: total number of events dropped when subsystem was disabled</li>
+                    </ul>
+                </li>
+            </ul>
+        </p>
+
+        <h3>Via JMX</h3>
+
+        <h4>The 15 seconds test - is a collector falling over?</h4>
+
+        <ul>
+            <li><strong>com.ning.metrics.collector:name=RTQueueStats</strong>, <strong>DroppedEvents</strong> going up? -&gt; Remote ActiveMQ can't keep up</li>
+            <li><strong>com.ning.metrics.collector:name=BufferingEventCollector</strong>, <strong>LostEvents</strong> going up? -&gt; Local disk can't keep up</li>
+            <li><strong>com.ning.metrics.collector:name=HDFSWriter</strong>, <strong>nbLocalFiles</strong> going up? -&gt; Can't flush to HDFS fast enough</li>
+        </ul>
+
+        <h4>Load overview</h4>
+
+        <p>To get a sense on how busy a collector is, look at the <strong>com.ning.metrics.collector.hadoop.processing:type=BufferingEventCollector,name=collectEvent</strong> bean. It gives you the rate of events being received, across all APIs (the <strong>collectEvent</strong> function dispatches to both ActiveMQ and HDFS).</p>
+
+        <p>The <strong>com.ning.metrics.collector:name=BufferingEventCollector</strong> bean has more details:</p>
+
+        <ul>
+            <li><strong>LostEvents</strong> displays the total number of events dropped because of capacity (in-memory queue full)</li>
+            <li><strong>QueueSizes</strong> displays the total numbers of events currently in memory, waiting to be flushed to disk</li>
+        </ul>
+
+        <p>The <strong>com.ning.metrics.collector:name=WriterQueueStats</strong> beans gives write rates to HFDS:</p>
+
+        <ul>
+            <li><strong>EnqueuedEvents</strong> is the total number of events accepted to the HDFS subsystem</li>
+            <li><strong>WrittenEvents</strong> is the total number of events buffered locally</li>
+            <li><strong>HdfsFlushes</strong> is the total number of files written to HDFS</li>
+            <li><strong>nbLocalFiles</strong> under <strong>com.ning.metrics.collector:name=HDFSWriter</strong> gives the number of local files not yet flushed to HDFS</li>
+        </ul>
+
+        <p>Similar stats are available for ActiveMQ, under <strong>com.ning.metrics.collector:name=RTQueueStats</strong> (stats are further broken down per Event type).</p>
+
+        <h4>Disabling flushes to ActiveMQ or HDFS</h4>
+
+        <p>In case of an HDFS outage, the collector can buffer events locally via <strong>com.ning.metrics.collector:name=HDFSWriter</strong> (see <strong>enableFlush</strong> and <strong>disableFlush</strong>). The <strong>processLeftBelowFiles</strong> action can be used to force a flush (will process all local files, including quarantined ones).</p>
+
+        <p>A similar knob for ActiveMQ can be found under <strong>com.ning.metrics.collector:name=RTSubsystem</strong>.</p>
+
+        <h4>Stats per API</h4>
+
+        <p>Stats (acceptance rate and latency) per API are exposed under the <strong>com.ning.metrics.collector.endpoint.resources</strong> beans:</p>
+
+        <ul>
+            <li><strong>com.ning.metrics.collector.endpoint.resources:type=CollectorResource,name=GET_API</strong>: GET API</li>
+            <li><strong>com.ning.metrics.collector.endpoint.resources:type=Base64CollectorResource,name=GET_Base64_API</strong>: Base64 GET API</li>
+            <li><strong>com.ning.metrics.collector.endpoint.resources:type=BodyResource,name=POST_Json_API</strong>: Json POST API</li>
+            <li><strong>com.ning.metrics.collector.endpoint.resources:type=BodyResource,name=POST_Smile_API</strong>: Smile POST API</li>
+            <li><strong>com.ning.metrics.collector.endpoint.resources:type=BodyResource,name=POST_ThriftLegacy_API</strong>: Thrift API, legacy (payload is a ArrayList of ThriftFields)</li>
+            <li><strong>com.ning.metrics.collector.endpoint.resources:type=BodyResource,name=POST_Thrift_API</strong>: Thrift API</li>
+            <li><strong>com.ning.metrics.collector.endpoint.resources:type=ScribeEventRequestHandler,name=SCRIBE_API</strong>: Scribe APIs</li>
+        </ul>
+
+        <p>The beans under <strong>com.ning.metrics.collector.endpoint.resources:type=EventRequestHandler</strong> drill into stats (success and failure rates) of the GET API deserializer, per payload type:</p>
+
+        <ul>
+            <li><strong>com.ning.metrics.collector.endpoint.resources:type=EventRequestHandler,name=BASE_64_QUERY_FAILURE</strong></li>
+            <li><strong>com.ning.metrics.collector.endpoint.resources:type=EventRequestHandler,name=BASE_64_QUERY_SUCCES</strong></li>
+            <li><strong>com.ning.metrics.collector.endpoint.resources:type=EventRequestHandler,name=DECIMAL_QUERY_FAILURE</strong></li>
+            <li><strong>com.ning.metrics.collector.endpoint.resources:type=EventRequestHandler,name=DECIMAL_QUERY_SUCCES</strong></li>
+            <li><strong>com.ning.metrics.collector.endpoint.resources:type=EventRequestHandler,name=DEFAULT_FAILURE</strong></li>
+            <li><strong>com.ning.metrics.collector.endpoint.resources:type=EventRequestHandler,name=DEFAULT_SUCCES</strong></li>
+            <li><strong>com.ning.metrics.collector.endpoint.resources:type=EventRequestHandler,name=JSON_FAILURE</strong></li>
+            <li><strong>com.ning.metrics.collector.endpoint.resources:type=EventRequestHandler,name=JSON_SUCCESS</strong></li>
+            <li><strong>com.ning.metrics.collector.endpoint.resources:type=EventRequestHandler,name=SMILE_FAILURE</strong></li>
+            <li><strong>com.ning.metrics.collector.endpoint.resources:type=EventRequestHandler,name=SMILE_SUCCESS</strong></li>
+            <li><strong>com.ning.metrics.collector.endpoint.resources:type=EventRequestHandler,name=THRIFT_FAILURE</strong></li>
+            <li><strong>com.ning.metrics.collector.endpoint.resources:type=EventRequestHandler,name=THRIFT_SUCCESS</strong></li>
+        </ul>
     </div>
 </body>
