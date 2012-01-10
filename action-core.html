@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Action core | Dwarf</title>
+    <meta name="description" content="The Action core exposes a REST interface and a UI for browsing to Hadoop">
+    <meta name="author" content="Pierre-Alexandre Meyer">
+
+    <!--[if lt IE 9]>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js" type="text/javascript"></script>
+    <![endif]-->
+
+    <link rel=stylesheet type="text/css" href="css/bootstrap.min.css">
+    <link rel=stylesheet type="text/css" href="css/prettify.css">
+    <script src="js/prettify.js"></script>
+</head>
+
+<body onload="prettyPrint();">
+
+<div class="container-fluid">
+    <div class="sidebar">
+        <div class="well">
+            <h5>Action core</h5>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#getting-started">Getting started</a></li>
+                <li><a href="#api">API</a></li>
+                <li><a href="#action-access">Action-access: Java library</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="content">
+
+        <h2 id="overview">Overview</h2>
+
+        <p>
+        The Action core exposes HDFS over HTTP by providing a REST interface as well as a browsing UI. Unlike the browser shipped natively with the Hadoop namenode, it integrates a de-serialization mechanism to read files content (e.g. Thrift files can be seen as CSV for instance).
+        </p>
+
+        <p>
+        At Ning, the Action core is the main interface to Hadoop: it gives us a standardized interface to HDFS and allows us to interact with multiple clusters, often running different versions of HDFS, without our application being aware of it.
+        </p>
+
+        <p>Here is how's my user directory look like using the native Hadoop browser:</p>
+
+        <ul class="media-grid">
+          <li>
+              <img class="thumbnail" src="images/browse_hadoop.png" alt="Hadoop browser">
+          </li>
+        </ul>
+
+        <p>The same directory, using the Action core:</p>
+
+        <ul class="media-grid">
+          <li>
+              <img class="thumbnail" src="images/browse_hadoop_action_core.png" alt="Action core browser">
+          </li>
+        </ul>
+
+        <p>At its core, the Action core is a web application. You can run it in Jetty or Tomcat for instance.</p>
+
+        <hr>
+
+        <h2 id="getting-started">Getting started</h2>
+
+        <p>war are published to <a href="http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.ning%22%20AND%20a%3A%22metrics.action%22">Maven Central</a>.</p>
+
+        <p>To get started, you can clone the Github tree and start the Action core locally:</p>
+
+        <pre class="prettyprint lan-bash">mvn -Daction.hadoop.namenode.url=hdfs://namenode.mycompany.com:9000 jetty:run</pre>
+
+        <p>You can now browse HDFS:</p>
+
+        <pre>http://127.0.0.1:8080/rest/1.0/hdfs?path=/</pre>
+
+        <h2 id="api">API</h2>
+
+        <ul>
+            <li>GET /rest/1.0/hdfs: jsp UI</li>
+            <li>GET /rest/1.0/json: output data as json (json streaming endpoint)</li>
+            <li>GET /rest/1.0/text: output data as csv</li>
+            <li>GET /rest/1.0/binary: output data as-is, no deserialization</li>
+            <li>POST /rest/1.0: upload a file</li>
+            <li>DELETE /rest/1.0: delete a path</li>
+        </ul>
+
+        <h3>Query parameters</h3>
+
+        <ul>
+            <li>path: path to open in HDFS</li>
+            <li>range: when opening a file, bucket of lines to display (e.g. range=1-50 for the first 51 lines)</li>
+            <li>raw: whether to display the nice, HTML version (raw=true) or plain text (raw=false)</li>
+            <li>recursive: whether to craw a directory recursively</li>
+        </ul>
+
+        <p>For instance, if you want to download all content under /user/pierre:</p>
+
+        <pre>curl 'http://127.0.0.1:8080/rest/1.0/hdfs?path=/user/pierre&recursive=true&raw=true'</pre>
+
+        <p>Upload specific parameters (POST):</p>
+
+        <ul>
+            <li>overwrite: overwrite the path if it exists already (default false)</li>
+            <li>replication: replication factor to use (default 3)</li>
+            <li>blocksize: blocksize to use (use Hadoop default otherwise)</li>
+            <li>permission: file permission to set, either in octal or symbolic format (default u=rw,go=r)</li>
+        </ul>
+
+        <hr>
+
+        <h2 id="action-access">Action-access: Java library</h2>
+
+    </div>
+</div>

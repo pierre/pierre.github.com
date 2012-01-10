@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Collector | Dwarf</title>
+    <title>Collector core | Dwarf</title>
     <meta name="description" content="The Collector core is a data aggregator for Hadoop">
     <meta name="author" content="Pierre-Alexandre Meyer">
 
@@ -34,18 +34,26 @@
 
     <div class="content">
 
-        <h2>Overview</h2>
+        <h2 id="overview">Overview</h2>
 
         <p>
             At a high level, the Collector Core is a Jetty service intended to receive <strong>events</strong> and persist them to HDFS (Hadoop DFS). It provides additional services such as data validation as well as bucketing. The Collector is the core component to Ning's Analytics data pipeline.
         </p>
+
+        <p>The image below shows how we use it at Ning to gather data: each subsystem (either internal or external) that stores data into HDFS does it via the Collector APIs.</p>
+
+        <ul class="media-grid">
+          <li>
+              <img class="thumbnail" src="images/collector_at_ning.png" alt="Collector at Ning">
+          </li>
+        </ul>
 
         <p>
             An <strong>event</strong> is a piece of information that occurred at a certain point in time. It may come from a user's browser, from another Java program, from a script that processes log files, ... In practice, it is a generic series of key-value pairs, defined by its schema. Any event sent to the collector core will show up in Hadoop, regardless if a schema has been defined. To document and maintain schema metadata, we use Goodwill at Ning.
         </p>
 
         <p>
-            At its core, the Collector a Jetty embedded server.
+            At its core, the Collector is a Jetty embedded server.
         </p>
 
         <hr>
