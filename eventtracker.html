@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Collector | Dwarf</title>
+    <meta name="description" content="The Collector core is a data aggregator for Hadoop">
+    <meta name="author" content="Pierre-Alexandre Meyer">
+
+    <!--[if lt IE 9]>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js" type="text/javascript"></script>
+    <![endif]-->
+
+    <link rel=stylesheet type="text/css" href="css/bootstrap.min.css">
+    <link rel=stylesheet type="text/css" href="css/prettify.css">
+    <script src="js/prettify.js"></script>
+</head>
+
+<body onload="prettyPrint();">
+
+<div class="container-fluid">
+    <div class="sidebar">
+        <div class="well">
+            <h5>Collector core</h5>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#getting-started">Getting started</a></li>
+                <li><a href="#client-side">Client side events logging (e.g. from Javascript)</a></li>
+                <li><a href="#server-side">Server side events logging (e.g. from Java, php)</a></li>
+                <li><a href="#eventtracker">Eventtracker: Java library</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="content">
+
+        <h2>Overview</h2>
+
+        <p>
+            At a high level, the Collector Core is a Jetty service intended to receive <strong>events</strong> and persist them to HDFS (Hadoop DFS). It provides additional services such as data validation as well as bucketing. The Collector is the core component to Ning's Analytics data pipeline.
+        </p>
+
+        <p>
+            An <strong>event</strong> is a piece of information that occurred at a certain point in time. It may come from a user's browser, from another Java program, from a script that processes log files, ... In practice, it is a generic series of key-value pairs, defined by its schema. Any event sent to the collector core will show up in Hadoop, regardless if a schema has been defined. To document and maintain schema metadata, we use Goodwill at Ning.
+        </p>
+
+        <p>
+            At its core, the Collector a Jetty embedded server.
+        </p>
+
+        <hr>
+
+        <h2 id="getting-started">Getting started</h2>
+
+        <p>Self contained jar are published to <a href="http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.ning%22%20AND%20a%3A%22metrics.collector%22">Maven Central</a>.
+
+        To start the Collector locally:</p>
+
+        <pre class="prettyprint lan-bash">java -Dcollector.event-output-directory=/var/tmp/collector -jar target/metrics.collector-*-SNAPSHOT-jar-with-dependencies.jar</pre>
+
+        <p>Data will first be spooled in a local directory (.diskpool), for aggregation, before being pushed to /var/tmp/collector (this directory will be in Hadoop if configured).
+
+        Available configuration options can be found <a href="https://github.com/pierre/collector/blob/master/src/main/java/com/ning/metrics/collector/binder/config/CollectorConfig.java">here</a>.</p>
+
+        <hr>
+
+        <h2 id="client-side">Client side events logging (e.g. from Javascript)</h2>
+
+        <p>
+        To instrument behaviors and interactions within a browser, the collector supports a GET endpoint.
+
+        To send an event, issue a GET call on the collector /1 or /2 endpoints. The event collector receives events encoded in the path.  It returns a 202 (accepted) to indicate that a best effort will be made to get the event into HDFS (barring catastrophic failures such as flaming machines). If the collector is overloaded, it can return a 503 (temporarily unavailable).
+
+        For example:</p>
+
+        <pre class="prettyprint lang-bash">curl -v http://127.0.0.1:8080/1?v=Hello,sWorld</pre>
+
+        <p>will send a single <em>Hello</em> event, with a single value (the string <em>World</em>).
+
+        Data is serialized in Thrift format on the way in.
+        </p>
+
+        <h3>Client-side API Version 1</h3>
+
+        <p>The primary concern with the url is to keep it smaller than 256 chars to avoid truncation by some browsers.</p>
+
+        <pre>/1?v=<EventType>,<type1><value1>,<type2><value2>,...</pre>
+
+        <p>
+            <ul>
+                <li>/1 => 'one' or version one of the api</li>
+                <li>each <em>type</em> is exactly 1 character</li>
+                <li>empty values are permitted</li>
+                <li>empty type is not permitted even with empty value</li>
+                <li>the individual type + value will be URL encoded as well (escapes any ,)</li>
+                <li>the value of the event in the 'v' parameter is URL encoded</li>
+            </ul>
+        </p>
+
+        <h4>Field Types</h4>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Collector type</th>
+                    <th>Equivalent thrift type</th>
+                    <th>Description</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>b</td><td>bool</td><td>A boolean value (true or false)</td><td>we use 0 or 1</td></tr>
+                <tr><td>1</td><td>byte</td><td>An 8-bit signed integer</td><td></td></tr>
+                <tr><td>2</td><td>i16</td><td>16-bit signed integer</td><td></td></tr>
+                <tr><td>4</td><td>i32</td><td>A 32-bit signed integer</td><td></td></tr>
+                <tr><td>8</td><td>i64</td><td>A 64-bit signed integer</td><td></td></tr>
+                <tr><td>d</td><td>double</td><td>A 64-bit floating point number</td><td></td></tr>
+                <tr><td>s</td><td>string</td><td>A text string encoded using UTF-8 encoding</td><td></td></tr>
+                <tr><td>x</td><td>n/a</td><td>The value indicates an annotation to fill in that the event collector can compute at receipt of the event</td><td></td></tr>
+            </tbody>
+        </table>
+
+        <h4>Custom Type functions</h4>
+
+        <p>In order to save space in the url, we have a custom type of 'x' which the event collector can fill in.  The valid values that may follow x include:</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Annotation value</th>
+                    <th>Meaning</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>date</td><td>Current time (millis since epoch)</td><td></td></tr>
+                <tr><td>host</td><td>Referrer host of the request to the Collector (parsed from Referrer header)</td><td></td></tr>
+                <tr><td>path</td><td>Referrer path of the request to the Collector (parsed from Referrer header)</td><td></td></tr>
+                <tr><td>ua</td><td>User-Agent header from request</td><td></td></tr>
+                <tr><td>ip</td><td>IP address parsed from X-Forwarded-For header in request</td><td>Requires that you have a load balancer to add this header</td><td></td></tr>
+            </tbody>
+        </table>
+
+        <h3>Client-side API Version 2 - Base64 Encode Numbers</h3>
+
+        <p>Version 2 of the Collector's API encodes numbers as in a custom base64 encoding. The URL format and types are the same as version 1:</p>
+
+        <pre>/2?v=<EventType>,<type1><value1>,<type2><value2>,...</pre>
+
+        <h4>Encoding schema</h4>
+
+        <p>We map 0 - 63 to the following chars:</p>
+
+        <pre>-
+0-9
+A-Z
+_
+a-z</pre>
+
+        <p>So '-' is 0, 'z' is 63. Example:</p>
+
+        <pre>/2?v=TestEvent,1-,20,4z,810</pre>
+
+        <p>would result in an event:</p>
+
+        <pre>type = EventType, byte: 0, short: 1, int: 63, long 128</pre>
+
+        <hr>
+
+        <h2 id="server-side">Server side events logging (e.g. from Java, php)</h2>
+
+        <p>On the server side, you use the more efficient resource <pre>/rest/1.0/event</pre> via POST. Multiple formats are accepted: Smile, Json, Thrift.</p>
+
+        <p>You can POST your payload to:</p>
+
+        <pre>/rest/1.0/event?name=EventType</pre>
+
+        <p>which returns 202 if the payload was properly formed.  It can also return 503 which means the collector is overloaded and the client should retry.
+
+        Optionally you may add date= to the query parameters to set a date for the event other than when it is received by the Collector (in ISO8601 format)</p>
+
+        <pre>/rest/1.0/event?name=EventType&date=2009-01-02T03:04:05.006Z</pre>
+
+        <h3>Json/Smile (recommended)</h3>
+
+        <p>The collector accepts Json/Smile events:</p>
+
+        <pre class="prettyprint lang-js">{
+    "eventName": ..., // Required: event name
+    "payload":
+    {
+        "eventDate": ...,  // Optional, defaults to the timestamp when the event was deserialized on the collector
+        "eventGranularity": ..., // Optional, defaults to HOURLY
+        "fied1": ..., // Your stuff!
+        "field2": ... // Your stuff!
+    }
+}</pre>
+
+        <p>For instance:</p>
+
+        <pre class="prettyprint lang-bash">echo '{ "eventName":"Hello", "payload": { "dontcare": "World" } }' > foo
+curl -v -XPOST -H'Content-Type: application/json' -d@foo http://127.0.0.1:8080/rest/1.0/event</pre>
+
+        <p>The request BODY can contain multiple events or an array of events:</p>
+
+        <pre class="prettyprint lang-js">{ "eventName":"Hello", "payload": { "dontcare": "World" } }
+{ "eventName":"Hello", "payload": { "dontcare": "World" } }
+{ "eventName":"Hello", "payload": { "dontcare": "World" } }</pre>
+
+        <p>or</p>
+
+        <pre class="prettyprint lang-js">[{ "eventName":"Hello", "payload": { "dontcare": "World" } },
+ { "eventName":"Hello", "payload": { "dontcare": "World" } },
+ { "eventName":"Hello", "payload": { "dontcare": "World" } }]</pre>
+
+        <p>Because the body can contains multiple events and a subset of these can be malformatted, the endpoint will always return 202 accepted. You can look for a 199 Warning header though for exceptions on failed events.</p>
+
+        <p>For json, use the application.json content-type. For Smile, use application/json+smile.</p>
+
+        <h3>Raw Thrift</h3>
+
+        <p>Same as Json/Smile, but use the application/thrift content-type.</p>
+
+        <p>You can test the Thrift endpoint by using the <a href="https://github.com/pierre/collector/blob/master/src/test/py/test_collector_thrift_endpoint.py">test_collector_thrift_endpoint.py</a> script provided in the Collector source code:</p>
+
+        <pre class="prettyprint lang-bash">python src/test/py/test_collector_thrift_endpoint.py</pre>
+
+        <hr>
+
+        <h2 id="eventtracker">Eventtracker: Java library</h2>
+
+        <p>To use it, update your pom.xml:</p>
+
+        <pre class="prettyprint lang-xml">&lt;dependency&gt;
+    &lt;groupId&gt;com.ning&lt;/groupId&gt;
+    &lt;artifactId&gt;metrics.eventtracker-smile&lt;/artifactId&gt;
+    &lt;version&gt;4.0.8&lt;/version&gt;
+&lt;/dependency&gt;</pre>
+
+        <p>You may also need <em>com.google.inject.extensions:guice-multibindings</em> (3.0 or higher) and <em>org.skife.config:config-magic</em> (0.9 or higher).</p>
+
+        <p>Install the Guice modules:</p>
+
+        <pre class="prettyprint lang-java">install(new MBeanModule());
+install(new CollectorControllerSmileModule());
+install(new CollectorControllerHttpMBeanModule());</pre>
+
+        <p>Create your event:</p>
+
+        <pre class="prettyprint lang-java">HelloEvent event = new HelloEvent(...);
+collector.offerEvent(SmileEnvelopeEvent.fromPOJO("Hello", Granularity.HOURLY, event)); # The String is your event name
+# On shutdown make sure to call collector.close() for cleanups</pre>
+
+        <p>where:
+
+            <ul>
+                <li>SmileEnvelopeEvent is an instance of com.ning.metrics.eventtracker.smile.com.ning.metrics.serialization.event.SmileEnvelopeEvent (shaded version)</li>
+                <li>collector is an instance of com.ning.metrics.eventtracker.CollectorController (from Guice)</li>
+            </ul>
+        </p>
+    </div>
+</body>
