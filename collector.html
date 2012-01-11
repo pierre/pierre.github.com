@@ -37,7 +37,7 @@
                 <li><a href="#getting-started">Getting started</a></li>
                 <li><a href="#client-side">Client side events logging</a></li>
                 <li><a href="#server-side">Server side events logging</a></li>
-                <li><a href="#eventtracker">Eventtracker: Java library</a></li>
+                <li><a href="#eventtracker">Eventtracker Java library</a></li>
                 <li><a href="#monitoring">Monitoring</a></li>
             </ul>
         </div>
@@ -47,8 +47,7 @@
 
         <h2 id="overview">Overview</h2>
 
-        <p>
-            At a high level, the Collector Core is a Jetty service intended to receive <strong>events</strong> and persist them to HDFS (Hadoop DFS). It provides additional services such as data validation as well as bucketing. The Collector is the core component to Ning's Analytics data pipeline.
+        <p>At a high level, the Collector core is a Jetty service intended to receive <strong>events</strong> and persist them to HDFS (Hadoop DFS). It provides additional services such as data validation as well as bucketing. The Collector is the core component to Ning's Analytics data pipeline.
         </p>
 
         <p>The image below shows how we use it at Ning to gather data: each subsystem (either internal or external) that stores data into HDFS does it via the Collector APIs.</p>
@@ -59,27 +58,23 @@
           </li>
         </ul>
 
-        <p>
-            An <strong>event</strong> is a piece of information that occurred at a certain point in time. It may come from a user's browser, from another Java program, from a script that processes log files, ... In practice, it is a generic series of key-value pairs, defined by its schema. Any event sent to the collector core will show up in Hadoop, regardless if a schema has been defined. To document and maintain schema metadata, we use Goodwill at Ning.
-        </p>
+        <p>An <strong>event</strong> is a piece of information that occurred at a certain point in time. It may come from a user's browser, from another Java program, from a script that processes log files, ... In practice, it is a generic series of key-value pairs, defined by its schema. Any event sent to the collector core will show up in Hadoop, regardless if a schema has been defined. To document and maintain schema metadata, we use <a href="https://github.com/pierre/goodwill" target="_blank">Goodwill</a> at Ning.</p>
 
-        <p>
-            At its core, the Collector is a Jetty embedded server.
-        </p>
+        <p>Events are first spooled locally in a local directory (.diskpool by default) for aggregation, before being pushed to Hadoop</p>
 
         <hr>
 
         <h2 id="getting-started">Getting started</h2>
 
-        <p>Self contained jar are published to <a href="http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.ning%22%20AND%20a%3A%22metrics.collector%22">Maven Central</a>.
+        <p>Self contained jar are published to <a href="http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.ning%22%20AND%20a%3A%22metrics.collector%22" target="_blank">Maven Central</a>.
 
         To start the Collector locally:</p>
 
-        <pre class="prettyprint lan-bash">java -Dcollector.event-output-directory=/var/tmp/collector -jar target/metrics.collector-*-SNAPSHOT-jar-with-dependencies.jar</pre>
+        <pre class="prettyprint lang-sh">java -Dcollector.event-output-directory=/var/tmp/collector -jar metrics.collector-*-jar-with-dependencies.jar</pre>
 
-        <p>Data will first be spooled in a local directory (.diskpool), for aggregation, before being pushed to /var/tmp/collector (this directory will be in Hadoop if configured).
+        <p>By default, it uses the local Hadoop filesystem. Events will show up in /var/tmp/collector.</p>
 
-        Available configuration options can be found <a href="https://github.com/pierre/collector/blob/master/src/main/java/com/ning/metrics/collector/binder/config/CollectorConfig.java">here</a>.</p>
+        </p><span class="label success">Note</span>&nbsp;Available configuration options can be found <a href="https://github.com/pierre/collector/blob/master/src/main/java/com/ning/metrics/collector/binder/config/CollectorConfig.java" target="_blank">here</a>.</p>
 
         <hr>
 
@@ -92,7 +87,7 @@
 
         For example:</p>
 
-        <pre class="prettyprint lang-bash">curl -v http://127.0.0.1:8080/1?v=Hello,sWorld</pre>
+        <pre class="prettyprint lang-sh">curl -v http://127.0.0.1:8080/1?v=Hello,sWorld</pre>
 
         <p>will send a single <em>Hello</em> event, with a single value (the string <em>World</em>).
 
@@ -188,17 +183,15 @@ a-z</pre>
 
         <h2 id="server-side">Server side events logging (e.g. from Java, php)</h2>
 
-        <p>On the server side, you use the more efficient resource <pre>/rest/1.0/event</pre> via POST. Multiple formats are accepted: Smile, Json, Thrift.</p>
+        <p>On the server side, you should use the more efficient resource</p>
 
-        <p>You can POST your payload to:</p>
+        <pre>POST /rest/1.0/event</pre>
 
-        <pre>/rest/1.0/event?name=EventType</pre>
-
-        <p>which returns 202 if the payload was properly formed.  It can also return 503 which means the collector is overloaded and the client should retry.
+        <p>which returns 202 if the payload was properly formed.  It can also return 503 which means the collector is overloaded and the client should retry. Multiple formats are accepted: Smile, Json, Thrift.</p>
 
         Optionally you may add date= to the query parameters to set a date for the event other than when it is received by the Collector (in ISO8601 format)</p>
 
-        <pre>/rest/1.0/event?name=EventType&date=2009-01-02T03:04:05.006Z</pre>
+        <pre>POST /rest/1.0/event?name=EventType&date=2009-01-02T03:04:05.006Z</pre>
 
         <h3>Json/Smile (recommended)</h3>
 
@@ -220,7 +213,7 @@ a-z</pre>
         <pre class="prettyprint lang-bash">echo '{ "eventName":"Hello", "payload": { "dontcare": "World" } }' > foo
 curl -v -XPOST -H'Content-Type: application/json' -d@foo http://127.0.0.1:8080/rest/1.0/event</pre>
 
-        <p>The request BODY can contain multiple events or an array of events:</p>
+        <p>The request body can contain multiple events or an array of events:</p>
 
         <pre class="prettyprint lang-js">{ "eventName":"Hello", "payload": { "dontcare": "World" } }
 { "eventName":"Hello", "payload": { "dontcare": "World" } }
@@ -234,21 +227,53 @@ curl -v -XPOST -H'Content-Type: application/json' -d@foo http://127.0.0.1:8080/r
 
         <p>Because the body can contains multiple events and a subset of these can be malformatted, the endpoint will always return 202 accepted. You can look for a 199 Warning header though for exceptions on failed events.</p>
 
-        <p>For json, use the application.json content-type. For Smile, use application/json+smile.</p>
+        <p>For json, use the <strong>application/json</strong> content-type. For Smile, use <strong>application/json+smile</strong>.</p>
 
-        <h3>Raw Thrift</h3>
+        <h3>Raw Thrift via HTTP</h3>
 
-        <p>Same as Json/Smile, but use the application/thrift content-type.</p>
+        <p>You have to specify the event name in the request URL for Thrift:</p>
 
-        <p>You can test the Thrift endpoint by using the <a href="https://github.com/pierre/collector/blob/master/src/test/py/test_collector_thrift_endpoint.py">test_collector_thrift_endpoint.py</a> script provided in the Collector source code:</p>
+        <pre>POST /rest/1.0/event?name=EventType</pre>
 
-        <pre class="prettyprint lang-bash">python src/test/py/test_collector_thrift_endpoint.py</pre>
+        <p>Use the <strong>application/thrift</strong> content-type.</p>
+
+        <h3>Thrift via Scribe</h3>
+
+        <p>The Collector exposes a non-HTTP Thrift API: the Scribe API. You can log messages directly from Scribe or any Thrift application.</p>
+
+        <p>You can test the Thrift endpoint by using the <a href="https://github.com/pierre/collector/blob/master/src/test/py/test_collector_thrift_endpoint.py" target="_blank">test_collector_thrift_endpoint.py</a> script provided in the Collector source code:</p>
+
+        <pre class="prettyprint lang-sh">python src/test/py/test_collector_thrift_endpoint.py</pre>
 
         <hr>
 
-        <h2 id="eventtracker">Eventtracker: Java library</h2>
+        <h2 id="eventtracker">Eventtracker Java library</h2>
 
-        <p>To use it, update your pom.xml:</p>
+        <p>To send event data from Java, you can use the <a href="https://github.com/pierre/eventtracker" target="_blank">eventtracker</a> library. We use it at Ning to send application specific data, log4j logs, <a href="https://github.com/pierre/ning-service-skeleton/blob/master/utils/src/main/java/com/ning/jetty/utils/filters/TrackerFilter.java" target="_blank">Jetty request logs</a>, etc.</p>
+
+        <p>The eventtracker supports most Collector APIs. You can use:
+            <ul>
+                <li><code>com.ning:metrics.eventtracker-simple</code> for the GET API version 1 (no local spooling is done)</li>
+                <li><code>com.ning:metrics.eventtracker-scribe</code> for the Scribe API</li>
+                <li><code>com.ning:metrics.eventtracker-smile</code> for the Smile and Thrift over HTTP APIs</li>
+            </ul>
+        </p>
+
+        <h3>Overview</h3>
+
+        <p>Each event accepted via the <code>offerEvent(Event)</code> API is directly serialized to disk using the <code>com.ning:metrics.serialization-writer</code> library for persistency (except when using the GET API version 1). Events are then de-serialized and sent to the collector periodically and/or after a certain number of events have been offered.</p>
+
+        <p>The <code>CollectorController</code> class provides the <code>commit()</code> call to force a promotion from the temporary queue of events to the final queue: only events in the final queue are sent (a separate thread wakes up periodically to see if there is anything to send). The <code>commit()</code> call bypasses the promotion rules mentioned above.</p>
+
+        <p>One can force a flush to the final queue by calling <code>flush()</code> on the controller object. This forces all events in the queue to be sent remotely.</p>
+
+        <p>Serialization to disk is done using the Java Serialization mechanisms (<code>ObjectOutputStream</code> to file). The whole Event object is written to disk. This is not configurable.</p>
+
+        <p>Final serialization on the wire is configurable (e.g. Json, Smile, Thrift). You can extend your event to support your own serialization protocol by implementing <code>getSerializedBytes()</code>. These bytes are sent on the wire.</p>
+
+        <h3>eventtracker-smile usage</h3>
+
+        <p>To use <code>com.ning:metrics.eventtracker-smile</code>, update your pom.xml:</p>
 
         <pre class="prettyprint lang-xml">&lt;dependency&gt;
     &lt;groupId&gt;com.ning&lt;/groupId&gt;
@@ -256,7 +281,7 @@ curl -v -XPOST -H'Content-Type: application/json' -d@foo http://127.0.0.1:8080/r
     &lt;version&gt;4.0.8&lt;/version&gt;
 &lt;/dependency&gt;</pre>
 
-        <p>You may also need <em>com.google.inject.extensions:guice-multibindings</em> (3.0 or higher) and <em>org.skife.config:config-magic</em> (0.9 or higher).</p>
+        <p>You may also need to add <em>com.google.inject.extensions:guice-multibindings</em> (3.0 or higher) and <em>org.skife.config:config-magic</em> (0.9 or higher) as dependencies.</p>
 
         <p>Install the Guice modules:</p>
 
@@ -266,15 +291,15 @@ install(new CollectorControllerHttpMBeanModule());</pre>
 
         <p>Create your event:</p>
 
-        <pre class="prettyprint lang-java">HelloEvent event = new HelloEvent(...);
+        <pre class="prettyprint lang-java">// Your POJO
+HelloEvent event = new HelloEvent(...);
 collector.offerEvent(SmileEnvelopeEvent.fromPOJO("Hello", Granularity.HOURLY, event)); # The String is your event name
 # On shutdown make sure to call collector.close() for cleanups</pre>
 
-        <p>where:
-
+        <p>where
             <ul>
-                <li>SmileEnvelopeEvent is an instance of com.ning.metrics.eventtracker.smile.com.ning.metrics.serialization.event.SmileEnvelopeEvent (shaded version)</li>
-                <li>collector is an instance of com.ning.metrics.eventtracker.CollectorController (from Guice)</li>
+                <li><code>SmileEnvelopeEvent</code> is an instance of <code>com.ning.metrics.eventtracker.smile.com.ning.metrics.serialization.event.SmileEnvelopeEvent</code> (shaded version)</li>
+                <li><code>collector</code> is an instance of <code>com.ning.metrics.eventtracker.CollectorController</code> (from Guice)</li>
             </ul>
         </p>
 
@@ -286,11 +311,11 @@ collector.offerEvent(SmileEnvelopeEvent.fromPOJO("Hello", Granularity.HOURLY, ev
 
         <h3>Via HTTP</h3>
 
-        <p>Http is probably the easiest way to get simple stats out of a running collector:</p>
+        <p>HTTP is probably the easiest way to get simple stats out of a running collector:</p>
 
         <pre class="prettyprint lang-js">~ &gt; curl http://127.0.0.1:8080/1.0/healthcheck?pretty=true
     {
-        "location" : "http://&lt;collector&gt;:8080/1.0/healthcheck",
+        "location" : "http://127.0.0.1:8080/1.0/healthcheck",
         "size" : 3,
         "formatVersion" : "1",
         "generated" : "2011-07-26T04:05:21.440Z",
