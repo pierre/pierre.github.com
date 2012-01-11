@@ -12,7 +12,10 @@
 
     <link rel=stylesheet type="text/css" href="css/bootstrap.min.css">
     <link rel=stylesheet type="text/css" href="css/prettify.css">
+    <link rel=stylesheet type="text/css" href="css/dwarf.css">
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
     <script src="js/prettify.js"></script>
+    <script src="js/bootstrap-dropdown.js"></script>
 
     <script type="text/javascript">
       var _gaq = _gaq || [];
@@ -27,6 +30,53 @@
 </head>
 
 <body onload="prettyPrint();">
+
+<div class="topbar" data-dropdown="dropdown">
+    <div class="topbar-inner">
+        <div class="container-fluid">
+            <a class="brand" href="index.html">Dwarf</a>
+            <ul class="nav">
+                <li><a href="action-core.html">Action core</a></li>
+                <li class="active"><a href="collector.html">Collector core</a></li>
+                <li><a href="http://groups.google.com/group/dwarf-users">Mailing List</a></li>
+            </ul>
+            <ul class="nav secondary-nav">
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle">Maven sites</a>
+                    <ul class="dropdown-menu">
+                        <li><a href="http://pierre.github.com/action-core" target="_blank">Action core</a></li>
+                        <li><a href="http://pierre.github.com/action-access" target="_blank">action-access library</a></li>
+                        <li><a href="http://pierre.github.com/collector" target="_blank">Collector core</a></li>
+                        <li><a href="http://pierre.github.com/eventtracker" target="_blank">eventtracker library</a></li>
+                        <li><a href="http://pierre.github.com/goodwill" target="_blank">Goodwill core</a></li>
+                        <li><a href="http://pierre.github.com/goodwill-access" target="_blank">goodwill-access library</a></li>
+                        <li><a href="http://pierre.github.com/serialization" target="_blank">serialization library</a></li>
+                        <li><a href="http://pierre.github.com/meteo" target="_blank">Meteo</a></li>
+                        <li><a href="http://pierre.github.com/hfind" target="_blank">Hfind</a></li>
+                        <li><a href="http://pierre.github.com/sweeper" target="_blank">Sweeper</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <ul class="nav secondary-nav">
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle">Github projects</a>
+                    <ul class="dropdown-menu">
+                        <li><a href="http://github.com/pierre/action-core" target="_blank">Action core</a></li>
+                        <li><a href="http://github.com/pierre/action-access" target="_blank">action-access library</a></li>
+                        <li><a href="http://github.com/pierre/collector" target="_blank">Collector core</a></li>
+                        <li><a href="http://github.com/pierre/eventtracker" target="_blank">eventtracker library</a></li>
+                        <li><a href="http://github.com/pierre/goodwill" target="_blank">Goodwill core</a></li>
+                        <li><a href="http://github.com/pierre/goodwill-access" target="_blank">goodwill-access library</a></li>
+                        <li><a href="http://github.com/pierre/serialization" target="_blank">serialization library</a></li>
+                        <li><a href="http://github.com/pierre/meteo" target="_blank">Meteo</a></li>
+                        <li><a href="http://github.com/pierre/hfind" target="_blank">Hfind</a></li>
+                        <li><a href="http://github.com/pierre/sweeper" target="_blank">Sweeper</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
 
 <div class="container-fluid">
     <div class="sidebar">
