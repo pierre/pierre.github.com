@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Dwarf: Ning's data pipeline and Analytics platform</title>
+    <meta name="description" content="Dwarf is Ning's data pipeline and Analytics platform, open-sourced in 2010">
+    <meta name="author" content="Pierre-Alexandre Meyer">
+
+    <!--[if lt IE 9]>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/dwarf.css">
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="js/bootstrap-dropdown.js"></script>
+</head>
+
+<body>
+
+<div class="topbar" data-dropdown="dropdown">
+    <div class="topbar-inner">
+        <div class="container-fluid">
+            <a class="brand" href="index.html">Dwarf</a>
+            <ul class="nav">
+                <li><a href="action-core.html">Action core</a></li>
+                <li><a href="collector.html">Collector core</a></li>
+                <li><a href="http://groups.google.com/group/dwarf-users">Mailing List</a></li>
+            </ul>
+            <ul class="nav secondary-nav">
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle">Maven sites</a>
+                    <ul class="dropdown-menu">
+                        <li><a href="http://pierre.github.com/action-core" target="_blank">Action core</a></li>
+                        <li><a href="http://pierre.github.com/action-access" target="_blank">action-access library</a></li>
+                        <li><a href="http://pierre.github.com/collector" target="_blank">Collector core</a></li>
+                        <li><a href="http://pierre.github.com/eventtracker" target="_blank">eventtracker library</a></li>
+                        <li><a href="http://pierre.github.com/goodwill" target="_blank">Goodwill core</a></li>
+                        <li><a href="http://pierre.github.com/goodwill-access" target="_blank">goodwill-access library</a></li>
+                        <li><a href="http://pierre.github.com/serialization" target="_blank">serialization library</a></li>
+                        <li><a href="http://pierre.github.com/meteo" target="_blank">Meteo</a></li>
+                        <li><a href="http://pierre.github.com/hfind" target="_blank">Hfind</a></li>
+                        <li><a href="http://pierre.github.com/sweeper" target="_blank">Sweeper</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <ul class="nav secondary-nav">
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle">Github projects</a>
+                    <ul class="dropdown-menu">
+                        <li><a href="http://github.com/pierre/action-core" target="_blank">Action core</a></li>
+                        <li><a href="http://github.com/pierre/action-access" target="_blank">action-access library</a></li>
+                        <li><a href="http://github.com/pierre/collector" target="_blank">Collector core</a></li>
+                        <li><a href="http://github.com/pierre/eventtracker" target="_blank">eventtracker library</a></li>
+                        <li><a href="http://github.com/pierre/goodwill" target="_blank">Goodwill core</a></li>
+                        <li><a href="http://github.com/pierre/goodwill-access" target="_blank">goodwill-access library</a></li>
+                        <li><a href="http://github.com/pierre/serialization" target="_blank">serialization library</a></li>
+                        <li><a href="http://github.com/pierre/meteo" target="_blank">Meteo</a></li>
+                        <li><a href="http://github.com/pierre/hfind" target="_blank">Hfind</a></li>
+                        <li><a href="http://github.com/pierre/sweeper" target="_blank">Sweeper</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="content">
+        <div id="blurb" class="container hero-unit">
+            <h1>Dwarf</h1>
+            <p>
+                <strong>
+                    Dwarf is <a href="http://www.ning.com" target="_blank">Ning</a>'s data pipeline and Analytics platform. It is a collection of open-source libraries, utilities and servers to build large-scale Analytics infrastructures.
+                </strong>
+            </p>
+
+            <p>
+                Ning has been working with Hadoop and related technologies since 2007. Over the years, we've built internally a large scale data pipeline, that we open-sourced in 2010. It is composed of several building blocks, which can be independently used:
+                <dl>
+                    <dt>Action core</dt>
+                        <dd>Exposes HDFS over HTTP. It provides both a REST API and a browsing UI.</dd>
+                    <dt>action-access library</dt>
+                        <dd>Java library to access the Action core. It provides an API to retrieve and store data in HDFS over HTTP.</dd>
+                    <dt>Collector core</dt>
+                        <dd>Data aggregator service, similar to Scribe or Kafka. It exposes both an HTTP and Thrift API.</dd>
+                    <dt>eventtracker library<dt>
+                        <dd>Java library to send data (<em>events</em>) to the Collector core.</dd>
+                    <dt>Goodwill core</dt>
+                        <dd>Metadata repository for events, it stores schema definitions. Used by the Collector core and the Action core for data validation.</dd>
+                    <dt>goodwill-access library</dt>
+                        <dd>Java library for Goodwill, it allows you to programmatically access Schemata from Goodwill.</dd>
+                    <dt>serialization library</dt>
+                        <dd>The serialization library contains the building blocks of the Dwarf framework. Each component depends on it.</dd>
+                    <dt>Meteo</dt>
+                        <dd>Realtime event processing engine. It leverages Esper for runtime analysis and can output data to different rendering engines for graphing purposes.</dd>
+                    <dt>HFind</dt>
+                        <dd>`find' implementation for Hadoop. See the <a href="http://www.opengroup.org/onlinepubs/009695399/utilities/find.html" target="_blank">POSIX specification</a>.
+                    <dt>Sweeper</dt>
+                        <dd>Hadoop utility to quickly find large directories to clean up or small files to combine.</dd>
+                </dl>
+            </p>
+
+            <h2>Contact</h2>
+
+            <p>IRC: #dwarf on irc.freenode.net.</p>
+
+            <p>There is a general <a href="http://groups.google.com/group/dwarf-users/" target="_blank">mailing-list</a> that carries announcements as well as discussions for all Dwarf subprojects. If you have a problem, it is a very good idea to browse the <a href="http://groups.google.com/group/dwarf-users/topics" target="_blank">archives</a> for information.</p>
+
+            <h2>Resources</h2>
+            <p>
+                <ul>
+                    <li><a href="http://www.ning.com/code/2011/04/tech-talk-realtime-analytics-at-ning/">Realtime Analytics</a> Tech Talk (<a href="http://pierre.github.com/meteo/#1">slides</a>)</li>
+                    <li><a href="http://www.ning.com/code/2011/01/low-latency-analytics-at-ning/">Low latency Analytics</a></li>
+                    <li><a href="http://pub.mouraf.org/blog/2010/10/hfind-1-0-1-released-print0-delete-and-more/">HFind: 1.0.1 release</a></li>
+                    <li><a href="http://pub.mouraf.org/blog/2010/09/hfind-a-find-utility-for-hadoop/">HFind: initial release announcement</a></li>
+                    <li><a href="http://www.ning.com/code/2010/07/sweeper-an-hdfs-browser/">Sweeper, an hdfs browser</a></li>
+                    <li><a href="http://www.ning.com/code/2010/06/scribe-at-ning-case-study/">Scribe case study</a></li>
+                </ul>
+            </p>
+
+            <h2>License</h2>
+
+            <p>Released under the <a href="http://www.apache.org/licenses/LICENSE-2.0.html" target="_blank">Apache License, Version 2.0</a>.</p>
+
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
