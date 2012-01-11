@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Action core | Dwarf</title>
+    <meta name="description" content="The Action core exposes a REST interface and a UI for browsing to Hadoop">
+    <meta name="author" content="Pierre-Alexandre Meyer">
+
+    <!--[if lt IE 9]>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js" type="text/javascript"></script>
+    <![endif]-->
+
+    <link rel=stylesheet type="text/css" href="css/bootstrap.min.css">
+    <link rel=stylesheet type="text/css" href="css/prettify.css">
+    <script src="js/prettify.js"></script>
+
+    <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-19297396-1']);
+      _gaq.push(['_trackPageview']);
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+</head>
+
+<body onload="prettyPrint();">
+
+<div class="container-fluid">
+    <div class="sidebar">
+        <div class="well">
+            <h5>Action core</h5>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#getting-started">Getting started</a></li>
+                <li><a href="#api">API</a></li>
+                <li><a href="#serialization">Custom deserializers</a></li>
+                <li><a href="#action-access">action-access</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="content">
+
+        <h2 id="overview">Overview</h2>
+
+        <p>
+        The Action core exposes HDFS over HTTP by providing a REST interface as well as a browsing UI. Unlike the browser shipped natively with the Hadoop namenode, it integrates a de-serialization mechanism to read files content (e.g. Thrift files can be seen as CSV for instance).
+        </p>
+
+        <p>
+        At Ning, the Action core is the main interface to Hadoop: it gives us a standardized interface to HDFS and allows us to interact with multiple clusters, often running different versions of HDFS, without our application being aware of it.
+        </p>
+
+        <p>Here is how's my user directory look like using the native Hadoop browser:</p>
+
+        <ul class="media-grid">
+          <li>
+              <img class="thumbnail" src="images/browse_hadoop.png" alt="Hadoop browser">
+          </li>
+        </ul>
+
+        <p>The same directory, using the Action core:</p>
+
+        <ul class="media-grid">
+          <li>
+              <img class="thumbnail" src="images/browse_hadoop_action_core.png" alt="Action core browser">
+          </li>
+        </ul>
+
+        <p>At its core, the Action core is a web application. You can run it in Jetty or Tomcat for instance.</p>
+
+        <hr>
+
+        <h2 id="getting-started">Getting started</h2>
+
+        <p>war are published to <a href="http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.ning%22%20AND%20a%3A%22metrics.action%22" target="_blank">Maven Central</a>.</p>
+
+        <p>To get started, you can clone the Github tree and start the Action core locally:</p>
+
+        <pre class="prettyprint lang-sh">mvn -Daction.hadoop.namenode.url=hdfs://namenode.mycompany.com:9000 jetty:run</pre>
+
+        <p>You can now browse HDFS:</p>
+
+        <pre class="prettyprint lang-sh">http://127.0.0.1:8080/rest/1.0/hdfs?path=/</pre>
+
+        <p><span class="label success">Note</span>&nbsp;Available configuration options can be found <a href="https://github.com/pierre/action-core/blob/master/src/main/java/com/ning/metrics/action/binder/config/ActionCoreConfig.java" target="_blank">here</a>.</p>
+
+        <h2 id="api">API</h2>
+
+        <h3>REST endpoints</h3>
+
+        <p><dl>
+            <dt>GET /rest/1.0/hdfs</dt><dd>Used by the jsp UI</dd>
+            <dt>GET /rest/1.0/json</dt><dd>Output data as json (json streaming endpoint)</dd>
+            <dt>GET /rest/1.0/text</dt><dd>Output data as csv</dd>
+            <dt>GET /rest/1.0/binary</dt><dd>Output data as-is, no deserialization</dd>
+            <dt>POST /rest/1.0</dt><dd>Upload a file</dd>
+            <dt>DELETE /rest/1.0</dt><dd>Delete a path</dd>
+        </dl></p>
+
+        <h3>Common query parameters</h3>
+
+        <p><dl>
+            <dt>path</dt><dd>Path to open in HDFS</dd>
+            <dt>range</dt><dd>When opening a file, bucket of lines to display (e.g. range=1-50 for the first 51 lines)</dd>
+            <dt>raw</dt><dd>Whether to display the nice, HTML version (raw=true) or plain text (raw=false)</dd>
+            <dt>recursive</dt><dd>Whether to craw a directory recursively</dd>
+        </dl></p>
+
+        <p>For instance, if you want to download all content under /user/pierre:</p>
+
+        <pre class="prettyprint lang-sh">curl 'http://127.0.0.1:8080/rest/1.0/hdfs?path=/user/pierre&recursive=true&raw=true'</pre>
+
+        <h3>POST specific parameters</h3>
+
+        <p><dl>
+            <dt>overwrite</dt><dd>Overwrite the path if it exists already (default false)</dd>
+            <dt>replication</dt><dd>Replication factor to use (default 3)</dd>
+            <dt>blocksize</dt><dd>Blocksize to use (use Hadoop default otherwise)</dd>
+            <dt>permission</dt><dd>File permission to set, either in octal or symbolic format (default u=rw,go=r)</dd>
+        </dl></p>
+
+        <hr>
+
+        <h2 id="serialization">Custom deserializers</h2>
+
+        <p>The Action core will parse a file into a list of <code>com.ning.metrics.action.hdfs.data.Row</code>. Intuitively, the Action core tries to represent any type of data like a csv file (the Row being the abstraction of a line in a csv file)</p>
+
+        <p>By default, it knows how to convert a line in a file (or an object in a Sequence file) to Rows for various serialization types: plain text, Thrift, Smile, ... See the serializers in  <code>com.ning.metrics.action.hdfs.data.parser</code>. You can also implement your own serializers by implementing <code>com.ning.metrics.action.hdfs.data.parser.RowSerializer</code>. The main method to implement is:</p>
+
+        <pre class="prettyprint lang-java">toRows(Registrar r, Object value)</pre>
+
+        <p><em>value</em> is either a Sequence file value when deserializing sequence files or an InputStream for plain text files and other raw binary data. <em>r</em> is metadata information regarding the object, if integration with <a href="https://github.com/pierre/goodwill" target="_blank">Goodwill</a> is enabled. To use your new serializer, specify it on the command line, e.g.:</p>
+
+        <pre class="prettyprint lang-sh">-Daction.hadoop.io.row.serializations=com.company.UberSecretRowSerializer\,com.company.VeryUberSecretRowSerializer</pre>
+
+        <p>You can also specify your custom Hadoop I/O serialization classes (which implement <code>org.apache.hadoop.io.serializer.Serialization<T></code>) on the command line:</p>
+
+        <pre class="prettyprint lang-sh">-Daction.hadoop.io.serializations=com.company.HadoopSecretSerialization</pre>
+
+        <h2 id="action-access">action-access: a Java library for the Action core</h2>
+
+        <p><a href="https://github.com/pierre/action-access" target="_blank">action-access</a> is a Java library for the Action core. Here is an example on how to use it:</p>
+
+        <pre class="prettyprint lang-java">final File jsonFile = new File("/tmp/cars.json");
+final ActionAccessor hdfsAccessor = new ActionAccessor("127.0.0.1", 8080);
+try {
+    // Download /user/pierre/cars.csv from Hadoop and store it locally to /tmp/cars.json as csv
+    hdfsAccessor.getPath("/user/pierre/cars.csv", false, true, jsonFile);
+} finally {
+    hdfsAccessor.close();
+}</pre>
+
+        <p>At Ning, we use action-access to download the data from Hadoop and bulk load it into our DataWarehouse (Netezza). We have also open-sourced this loader. Check-it out for a real example project: <a href="https://github.com/mrids/hadoop-to-netezza-loader" target="_blank">hadoop-to-netezza-loader</a></p>
+    </div>
+</div>
