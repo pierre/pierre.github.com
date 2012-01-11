@@ -13,6 +13,17 @@
     <link rel=stylesheet type="text/css" href="css/bootstrap.min.css">
     <link rel=stylesheet type="text/css" href="css/prettify.css">
     <script src="js/prettify.js"></script>
+
+    <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-19297396-1']);
+      _gaq.push(['_trackPageview']);
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
 </head>
 
 <body onload="prettyPrint();">
@@ -65,76 +76,78 @@
 
         <h2 id="getting-started">Getting started</h2>
 
-        <p>war are published to <a href="http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.ning%22%20AND%20a%3A%22metrics.action%22">Maven Central</a>.</p>
+        <p>war are published to <a href="http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.ning%22%20AND%20a%3A%22metrics.action%22" target="_blank">Maven Central</a>.</p>
 
         <p>To get started, you can clone the Github tree and start the Action core locally:</p>
 
-        <pre class="prettyprint lan-bash">mvn -Daction.hadoop.namenode.url=hdfs://namenode.mycompany.com:9000 jetty:run</pre>
+        <pre class="prettyprint lang-sh">mvn -Daction.hadoop.namenode.url=hdfs://namenode.mycompany.com:9000 jetty:run</pre>
 
         <p>You can now browse HDFS:</p>
 
-        <pre>http://127.0.0.1:8080/rest/1.0/hdfs?path=/</pre>
+        <pre class="prettyprint lang-sh">http://127.0.0.1:8080/rest/1.0/hdfs?path=/</pre>
 
-        <p>Available configuration options can be found <a href="https://github.com/pierre/action-core/blob/master/src/main/java/com/ning/metrics/action/binder/config/ActionCoreConfig.java">here</a>.</p>
+        <p><span class="label success">Note</span>&nbsp;Available configuration options can be found <a href="https://github.com/pierre/action-core/blob/master/src/main/java/com/ning/metrics/action/binder/config/ActionCoreConfig.java" target="_blank">here</a>.</p>
 
         <h2 id="api">API</h2>
 
-        <ul>
-            <li>GET /rest/1.0/hdfs: jsp UI</li>
-            <li>GET /rest/1.0/json: output data as json (json streaming endpoint)</li>
-            <li>GET /rest/1.0/text: output data as csv</li>
-            <li>GET /rest/1.0/binary: output data as-is, no deserialization</li>
-            <li>POST /rest/1.0: upload a file</li>
-            <li>DELETE /rest/1.0: delete a path</li>
-        </ul>
+        <h3>REST endpoints</h3>
 
-        <h3>Query parameters</h3>
+        <p><dl>
+            <dt>GET /rest/1.0/hdfs</dt><dd>Used by the jsp UI</dd>
+            <dt>GET /rest/1.0/json</dt><dd>Output data as json (json streaming endpoint)</dd>
+            <dt>GET /rest/1.0/text</dt><dd>Output data as csv</dd>
+            <dt>GET /rest/1.0/binary</dt><dd>Output data as-is, no deserialization</dd>
+            <dt>POST /rest/1.0</dt><dd>Upload a file</dd>
+            <dt>DELETE /rest/1.0</dt><dd>Delete a path</dd>
+        </dl></p>
 
-        <ul>
-            <li>path: path to open in HDFS</li>
-            <li>range: when opening a file, bucket of lines to display (e.g. range=1-50 for the first 51 lines)</li>
-            <li>raw: whether to display the nice, HTML version (raw=true) or plain text (raw=false)</li>
-            <li>recursive: whether to craw a directory recursively</li>
-        </ul>
+        <h3>Common query parameters</h3>
+
+        <p><dl>
+            <dt>path</dt><dd>Path to open in HDFS</dd>
+            <dt>range</dt><dd>When opening a file, bucket of lines to display (e.g. range=1-50 for the first 51 lines)</dd>
+            <dt>raw</dt><dd>Whether to display the nice, HTML version (raw=true) or plain text (raw=false)</dd>
+            <dt>recursive</dt><dd>Whether to craw a directory recursively</dd>
+        </dl></p>
 
         <p>For instance, if you want to download all content under /user/pierre:</p>
 
-        <pre>curl 'http://127.0.0.1:8080/rest/1.0/hdfs?path=/user/pierre&recursive=true&raw=true'</pre>
+        <pre class="prettyprint lang-sh">curl 'http://127.0.0.1:8080/rest/1.0/hdfs?path=/user/pierre&recursive=true&raw=true'</pre>
 
-        <p>Upload specific parameters (POST):</p>
+        <h3>POST specific parameters</h3>
 
-        <ul>
-            <li>overwrite: overwrite the path if it exists already (default false)</li>
-            <li>replication: replication factor to use (default 3)</li>
-            <li>blocksize: blocksize to use (use Hadoop default otherwise)</li>
-            <li>permission: file permission to set, either in octal or symbolic format (default u=rw,go=r)</li>
-        </ul>
+        <p><dl>
+            <dt>overwrite</dt><dd>Overwrite the path if it exists already (default false)</dd>
+            <dt>replication</dt><dd>Replication factor to use (default 3)</dd>
+            <dt>blocksize</dt><dd>Blocksize to use (use Hadoop default otherwise)</dd>
+            <dt>permission</dt><dd>File permission to set, either in octal or symbolic format (default u=rw,go=r)</dd>
+        </dl></p>
 
         <hr>
 
         <h2 id="serialization">Custom deserializers</h2>
 
         <p>
-            The Action core will parse a file into a list of <code>com.ning.metrics.action.hdfs.data.Row</code>s. Intuitively, the Action core tries to represent any type of data like a csv file (the Row being the abstraction of a line in a csv file)
+            The Action core will parse a file into a list of <code>com.ning.metrics.action.hdfs.data.Row</code>. Intuitively, the Action core tries to represent any type of data like a csv file (the Row being the abstraction of a line in a csv file)
         </p>
 
         <p>
             By default, it knows how to convert a line in a file (or an object in a Sequence file) to Rows for various serialization types: plain text, Thrift, Smile, ... See the serializers in  <code>com.ning.metrics.action.hdfs.data.parser</code>. You can also implement your own serializers by implementing <code>com.ning.metrics.action.hdfs.data.parser.RowSerializer</code>. The main method to implement is:
         </p>
 
-        <pre class="prettyprint lan-java">toRows(Registrar r, Object value)</pre>
+        <pre class="prettyprint lang-java">toRows(Registrar r, Object value)</pre>
 
         <p>
             <em>value</em> is either a Sequence file value when deserializing sequence files or an InputStream for plain text files and other raw binary data. <em>r</em> is metadata information regarding the object, if integration with Goodwill is enabled. To use your new serializer, specify it on the command line, e.g.:
         </p>
 
-        <pre>-Daction.hadoop.io.row.serializations=com.company.UberSecretRowSerializer\,com.company.VeryUberSecretRowSerializer</pre>
+        <pre class="prettyprint lang-sh">-Daction.hadoop.io.row.serializations=com.company.UberSecretRowSerializer\,com.company.VeryUberSecretRowSerializer</pre>
 
         <p>
-            You can alsi specify your custom Hadoop I/O serialization classes (which implement <code>org.apache.hadoop.io.serializer.Serialization<T></code>) on the command line:
+            You can also specify your custom Hadoop I/O serialization classes (which implement <code>org.apache.hadoop.io.serializer.Serialization<T></code>) on the command line:
         </p>
 
-        <pre>-Daction.hadoop.io.serializations=com.company.HadoopSecretSerialization</pre>
+        <pre class="prettyprint lang-sh">-Daction.hadoop.io.serializations=com.company.HadoopSecretSerialization</pre>
 
         <h2 id="action-access">Action-access: Java library</h2>
 
