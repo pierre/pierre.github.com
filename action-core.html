@@ -37,7 +37,7 @@
                 <li><a href="#getting-started">Getting started</a></li>
                 <li><a href="#api">API</a></li>
                 <li><a href="#serialization">Custom deserializers</a></li>
-                <li><a href="#action-access">Action-access: Java library</a></li>
+                <li><a href="#action-access">action-access</a></li>
             </ul>
         </div>
     </div>
@@ -127,29 +127,33 @@
 
         <h2 id="serialization">Custom deserializers</h2>
 
-        <p>
-            The Action core will parse a file into a list of <code>com.ning.metrics.action.hdfs.data.Row</code>. Intuitively, the Action core tries to represent any type of data like a csv file (the Row being the abstraction of a line in a csv file)
-        </p>
+        <p>The Action core will parse a file into a list of <code>com.ning.metrics.action.hdfs.data.Row</code>. Intuitively, the Action core tries to represent any type of data like a csv file (the Row being the abstraction of a line in a csv file)</p>
 
-        <p>
-            By default, it knows how to convert a line in a file (or an object in a Sequence file) to Rows for various serialization types: plain text, Thrift, Smile, ... See the serializers in  <code>com.ning.metrics.action.hdfs.data.parser</code>. You can also implement your own serializers by implementing <code>com.ning.metrics.action.hdfs.data.parser.RowSerializer</code>. The main method to implement is:
-        </p>
+        <p>By default, it knows how to convert a line in a file (or an object in a Sequence file) to Rows for various serialization types: plain text, Thrift, Smile, ... See the serializers in  <code>com.ning.metrics.action.hdfs.data.parser</code>. You can also implement your own serializers by implementing <code>com.ning.metrics.action.hdfs.data.parser.RowSerializer</code>. The main method to implement is:</p>
 
         <pre class="prettyprint lang-java">toRows(Registrar r, Object value)</pre>
 
-        <p>
-            <em>value</em> is either a Sequence file value when deserializing sequence files or an InputStream for plain text files and other raw binary data. <em>r</em> is metadata information regarding the object, if integration with Goodwill is enabled. To use your new serializer, specify it on the command line, e.g.:
-        </p>
+        <p><em>value</em> is either a Sequence file value when deserializing sequence files or an InputStream for plain text files and other raw binary data. <em>r</em> is metadata information regarding the object, if integration with <a href="https://github.com/pierre/goodwill" target="_blank">Goodwill</a> is enabled. To use your new serializer, specify it on the command line, e.g.:</p>
 
         <pre class="prettyprint lang-sh">-Daction.hadoop.io.row.serializations=com.company.UberSecretRowSerializer\,com.company.VeryUberSecretRowSerializer</pre>
 
-        <p>
-            You can also specify your custom Hadoop I/O serialization classes (which implement <code>org.apache.hadoop.io.serializer.Serialization<T></code>) on the command line:
-        </p>
+        <p>You can also specify your custom Hadoop I/O serialization classes (which implement <code>org.apache.hadoop.io.serializer.Serialization<T></code>) on the command line:</p>
 
         <pre class="prettyprint lang-sh">-Daction.hadoop.io.serializations=com.company.HadoopSecretSerialization</pre>
 
-        <h2 id="action-access">Action-access: Java library</h2>
+        <h2 id="action-access">action-access: a Java library for the Action core</h2>
 
+        <p><a href="https://github.com/pierre/action-access" target="_blank">action-access</a> is a Java library for the Action core. Here is an example on how to use it:</p>
+
+        <pre class="prettyprint lang-java">final File jsonFile = new File("/tmp/cars.json");
+final ActionAccessor hdfsAccessor = new ActionAccessor("127.0.0.1", 8080);
+try {
+    // Download /user/pierre/cars.csv from Hadoop and store it locally to /tmp/cars.json as csv
+    hdfsAccessor.getPath("/user/pierre/cars.csv", false, true, jsonFile);
+} finally {
+    hdfsAccessor.close();
+}</pre>
+
+        <p>At Ning, we use action-access to download the data from Hadoop and bulk load it into our DataWarehouse (Netezza). We have also open-sourced this loader. Check-it out for a real example project: <a href="https://github.com/mrids/hadoop-to-netezza-loader" target="_blank">hadoop-to-netezza-loader</a></p>
     </div>
 </div>
